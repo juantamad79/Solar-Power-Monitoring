@@ -19,6 +19,7 @@ const int kIoPin   = 18;  // Input/Output
 const int kSclkPin = 19;  // Serial Clock
 #define DS1302_GND_PIN 12
 #define DS1302_VCC_PIN 11
+const int enable_rtc_time_set = 0;
 
 // Create a DS1302 object.
 DS1302 rtc(kCePin, kIoPin, kSclkPin);
@@ -62,18 +63,21 @@ void setup() {
   pinMode(DS1302_VCC_PIN, OUTPUT);  
   digitalWrite(DS1302_VCC_PIN, HIGH);
   digitalWrite(DS1302_GND_PIN, LOW);
-  // Initialize a new chip by turning off write protection and clearing the
-  // clock halt flag. These methods needn't always be called. See the DS1302
-  // datasheet for details.
-  rtc.writeProtect(false);
-  rtc.halt(false);
-
-  // Make a new time object to set the date and time.
-  // Sunday, September 22, 2013 at 01:38:50.
-  Time t(2018, 11, 6, 2, 27, 10, Time::kTuesday);
-
-  // Set the time and date on the chip.
-  rtc.time(t);
+  
+  if (enable_rtc_time_set) { 
+    // Initialize a new chip by turning off write protection and clearing the
+    // clock halt flag. These methods needn't always be called. See the DS1302
+    // datasheet for details.
+    rtc.writeProtect(false);
+    rtc.halt(false);
+  
+    // Make a new time object to set the date and time.
+    // Sunday, September 22, 2013 at 01:38:50.
+    Time t(2018, 11, 6, 2, 53, 10, Time::kTuesday);
+  
+    // Set the time and date on the chip.
+     rtc.time(t);
+  }
 }
 
 // Loop and print the time every second.
