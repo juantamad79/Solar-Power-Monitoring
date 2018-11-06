@@ -6,6 +6,7 @@
 // http://quadpoint.org/projects/arduino-ds1302
 #include <stdio.h>
 #include <DS1302.h>
+#include <TimeLib.h>
 
 namespace {
 
@@ -17,39 +18,25 @@ namespace {
 const int kCePin   = 13;  // Chip Enable
 const int kIoPin   = 18;  // Input/Output
 const int kSclkPin = 19;  // Serial Clock
-#define DS1302_GND_PIN 12
-#define DS1302_VCC_PIN 11
+#define DS1302_GND_PIN 12 // Gnd Pin for RTC
+#define DS1302_VCC_PIN 11 // VCC Pin for RTC
+
 const int enable_rtc_time_set = 0;
 
 // Create a DS1302 object.
 DS1302 rtc(kCePin, kIoPin, kSclkPin);
 
-String dayAsString(const Time::Day day) {
-  switch (day) {
-    case Time::kSunday: return "Sunday";
-    case Time::kMonday: return "Monday";
-    case Time::kTuesday: return "Tuesday";
-    case Time::kWednesday: return "Wednesday";
-    case Time::kThursday: return "Thursday";
-    case Time::kFriday: return "Friday";
-    case Time::kSaturday: return "Saturday";
-  }
-  return "(unknown day)";
-}
-
 void printTime() {
   // Get the current time and date from the chip.
-  Time t = rtc.time();
-
+  time_t timeNow = now();
   // Name the day of the week.
-  const String day = dayAsString(t.day);
+  //const String day = dayAsString(t.day);
 
   // Format the time and date and insert into the temporary buffer.
   char buf[50];
-  snprintf(buf, sizeof(buf), "%s %04d-%02d-%02d %02d:%02d:%02d",
-           day.c_str(),
-           t.yr, t.mon, t.date,
-           t.hr, t.min, t.sec);
+  snprintf(buf, sizeof(buf), "%04d-%02d-%02d %02d:%02d:%02d",
+           year(timeNow), month(timeNow), day(timeNow),
+           hour(timeNow), minute(timeNow), second(timeNow));
 
   // Print the formatted string to serial so we can see the time.
   Serial.println(buf);
@@ -57,10 +44,15 @@ void printTime() {
 
 }  // namespace
 
+
+
+
 void setup() {
   Serial.begin(9600);
   pinMode(DS1302_GND_PIN, OUTPUT);
   pinMode(DS1302_VCC_PIN, OUTPUT);  
+
+  // Enable RTC clock vcc pin and gnd pin
   digitalWrite(DS1302_VCC_PIN, HIGH);
   digitalWrite(DS1302_GND_PIN, LOW);
   
@@ -78,10 +70,18 @@ void setup() {
     // Set the time and date on the chip.
      rtc.time(t);
   }
+  // Retrieve the time and date from RTC
+  Time t = rtc.time();
+  // Set arduino internal clock the time and date retrieved from RTC
+  setTime(t.hr,t.min,t.sec,t.date,t.mon,t.yr);
+  // Disable the power of RTC clock
+  digitalWrite(DS1302_VCC_PIN, LOW);
+  digitalWrite(DS1302_GND_PIN, LOW);
 }
 
 // Loop and print the time every second.
+
 void loop() {
   printTime();
-  delay(1000);
+  delay(5000);
 }
