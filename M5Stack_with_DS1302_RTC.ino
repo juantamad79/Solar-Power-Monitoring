@@ -7,6 +7,9 @@
 #include <stdio.h>
 #include <DS1302.h>
 #include <TimeLib.h>
+#include <M5Stack.h>
+#include "utility/MPU9250.h"
+
 
 namespace {
 
@@ -15,13 +18,13 @@ namespace {
 // datasheet:
 //
 //   http://datasheets.maximintegrated.com/en/ds/DS1302.pdf
-const int kCePin   = 13;                    // Chip Enable
-const int kIoPin   = 21;                    // Input/Output
-const int kSclkPin = 22;                    // Serial Clock
-#define DS1302_GND_PIN 1                   // Gnd Pin for RTC
-#define DS1302_VCC_PIN 3                   // VCC Pin for RTC
+const int kCePin   = 18;                    // Chip Enable
+const int kIoPin   = 1;                    // Input/Output
+const int kSclkPin = 2;                    // Serial Clock
+//#define DS1302_GND_PIN 18                   // Gnd Pin for RTC
+//#define DS1302_VCC_PIN 23                   // VCC Pin for RTC
 
-const int enable_rtc_time_set = 1;          // enable this if you want to set new time/date in RTC
+const int enable_rtc_time_set = 0;          // enable this if you want to set new time/date in RTC
 int sensorPin = A0;                         // select the input pin for the voltage measurement signal
 int sensorValue = 0;                        // variable to store the value coming from the sensor
 float voltageValue = 0;                     // Initial value for voltage measurement
@@ -44,18 +47,20 @@ void printTime() {                          // Function to display current time/
 
   // Print the formatted string to serial so we can see the time.
   Serial.print(buf);
+  M5.Lcd.setCursor(100, 220);
+  M5.Lcd.printf(buf);
 }
 
 }  // namespace
 
 void setup() {
   Serial.begin(9600);
-  pinMode(DS1302_GND_PIN, OUTPUT);
-  pinMode(DS1302_VCC_PIN, OUTPUT);  
+  //pinMode(DS1302_GND_PIN, OUTPUT);
+  //pinMode(DS1302_VCC_PIN, OUTPUT);  
 
   // Enable RTC clock vcc pin and gnd pin
-  digitalWrite(DS1302_VCC_PIN, HIGH);
-  digitalWrite(DS1302_GND_PIN, LOW);
+  //digitalWrite(DS1302_VCC_PIN, HIGH);
+  //digitalWrite(DS1302_GND_PIN, LOW);
   
   if (enable_rtc_time_set) { 
     // Initialize a new chip by turning off write protection and clearing the
@@ -66,7 +71,7 @@ void setup() {
   
     // Make a new time object to set the date and time.
     // Sunday, September 22, 2013 at 01:38:50.
-    Time t(2018, 11, 9, 12, 03, 10, Time::kTuesday);
+    Time t(2018, 11, 9, 0, 19, 15, Time::kThursday);
   
     // Set the time and date on the chip.
      rtc.time(t);
@@ -76,13 +81,21 @@ void setup() {
   // Set arduino internal clock the time and date retrieved from RTC
   setTime(t.hr,t.min,t.sec,t.date,t.mon,t.yr);
   // Disable the power of RTC clock
-  digitalWrite(DS1302_VCC_PIN, LOW);
-  digitalWrite(DS1302_GND_PIN, LOW);
+  //digitalWrite(DS1302_VCC_PIN, LOW);
+  //digitalWrite(DS1302_GND_PIN, LOW);
+  // initialize the M5Stack object
+  M5.begin();
+  M5.startupLogo();
+  M5.Lcd.setTextColor(WHITE);
+  M5.Lcd.setTextSize(1);
+
 }
 
 // Loop and print the time every second.
 
 void loop() {
+  M5.lcd.setBrightness(100);
+  M5.Lcd.fillScreen(BLACK);
   printTime();
   sensorValue = analogRead(sensorPin);
   voltageValue = get_voltage_meas(sensorPin);
@@ -91,6 +104,8 @@ void loop() {
   Serial.print(" Voltage Value: ");
   Serial.println(voltageValue);
   delay(5000);
+  
+  
 }
 
 float get_voltage_meas(int port){
